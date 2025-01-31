@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 
 def load_and_preprocess_data(
-    filepath: str, start_token: str = "!", end_token: str = "."
+    filepath: str, start_token: str = "<S>", end_token: str = "<E>"
 ) -> List[Tuple[str, str]]:
     """
     Load text from a file and preprocess them into bigrams with specified start and end tokens.
@@ -30,7 +30,16 @@ def load_and_preprocess_data(
         lines: List[str] = file.read().splitlines()
 
     # TODO
-    bigrams: List[Tuple[str, str]] = None
+    words: List[str] = [line.rsplit(maxsplit=2)[0].lower() for line in lines]
+    bigrams: List[Tuple[str, str]] = []
+
+    for word in words:
+        bigrams.append((start_token, word[0]))
+
+        for i in range(len(word) - 1):
+            bigrams.append((word[i], word[i + 1]))
+
+        bigrams.append((word[-1], end_token))
 
     return bigrams
 
@@ -49,7 +58,9 @@ def char_to_index(alphabet: str, start_token: str, end_token: str) -> Dict[str, 
     """
     # Create a dictionary with start token at the beginning and end token at the end
     # TODO
-    char_to_idx: Dict[str, int] = None
+    char_to_idx: Dict[str, int] = {letter: i + 1 for i, letter in enumerate(alphabet)}
+    char_to_idx[start_token] = 0
+    char_to_idx[end_token] = len(alphabet) + 1
 
     return char_to_idx
 
@@ -66,7 +77,7 @@ def index_to_char(char_to_index: Dict[str, int]) -> Dict[int, str]:
     """
     # Reverse the char_to_index mapping
     # TODO
-    idx_to_char: Dict[int, str] = None
+    idx_to_char: Dict[int, str] = {char: index for index, char in char_to_index.items()}
 
     return idx_to_char
 
@@ -93,10 +104,16 @@ def count_bigrams(
 
     # Initialize a 2D tensor for counting bigrams
     # TODO
-    bigram_counts: torch.Tensor = None
+    bigram_counts: torch.Tensor = torch.zeros(len(char_to_idx), len(char_to_idx))
 
     # Iterate over each bigram and update the count in the tensor
-    # TODO
+    for key_1 in char_to_idx.keys():
+        for key_2 in char_to_idx.keys():
+
+            i: int = char_to_idx[key_1]
+            j: int = char_to_idx[key_2]
+
+            bigram_counts[i, j] = bigrams.count((key_1, key_2))
 
     return bigram_counts
 
